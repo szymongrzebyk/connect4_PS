@@ -66,9 +66,16 @@ while True:
         break
                 
 
-    # DO TEGO PUNKTU DZIAŁA DOBRZE
+# MULTICAST GROUP
+MCAST_GROUP = '224.1.1.1'
+MCAST_PORT = 5007
+MCAST_TTL = 2
+multicast_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+multicast_socket.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, MCAST_TTL)
 
- 
+
+print("\n",clients,"\n")
+
 starting_socket = sockets_list[1]
 starting_socket.send("You start".encode())
 

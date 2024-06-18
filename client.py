@@ -28,14 +28,25 @@ print(message)
 if message == "Game full":
     sys.exit()
 
+def flush_input():
+    try:
+        import msvcrt
+        while msvcrt.kbhit():
+            msvcrt.getch()
+    except ImportError:
+        import sys, termios    #for linux/unix
+        termios.tcflush(sys.stdin, termios.TCIOFLUSH)
 
 while True:
     message = ""
     while message == "":
         message = client_socket.recv(2048).decode()
     print(f"Message from server: {message}")
+    
 
+    flush_input()
     message = input("Choose column: ")
+
 
     # get input -> validate input -> send input to server
     # -> wait for server response -> print response
