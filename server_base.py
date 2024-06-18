@@ -21,8 +21,9 @@ sockets_list = [server_socket]
 
 clients = {}
 
+print(f'Listening for connections on {IPaddr}:{port}...')
 
-def recv_msg(client_socket):
+def receive_message(client_socket):
     try:
         message_header = client_socket.recv(HEADER_LENGTH)
         if not len(message_header):
@@ -33,17 +34,15 @@ def recv_msg(client_socket):
         return {'header': message_header, 'data': client_socket.recv(message_length)}
     except:
         return False
-
-
-
-while True:
-    read_sockets, write_sockets, exception_sockets = select.select(sockets_list, [], sockets_list)
     
+while True:
+    read_sockets, _, exception_sockets = select.select(sockets_list, [], sockets_list)
+
     for sock in read_sockets:
         if sock==server_socket:
             client_socket, client_address = server_socket.accept()
 
-            user = recv_msg(client_socket)
+            user = receive_message(client_socket)
             if user is False:
                 continue
             
@@ -57,20 +56,19 @@ while True:
 
                 print(f"Connection from {client_address[0]}:{client_address[1]}, user {user['data'].decode()}")
                 client_socket.send("Successfully connected".encode())
-    # DO TEGO PUNKTU DZIAŁA DOBRZE
         else:
-            message = recv_msg(sock)
-            
+            message = receive_message(sock)
             if message is False:
-                print(f"Closed connection from {clients[sock]['data'].decode()}")
+                print('Closed connection from: {}'.format(clients[sock]['data'].decode('utf-8')))
                 sockets_list.remove(sock)
                 del clients[sock]
                 continue
-            
             user = clients[sock]
-            print(f"Received message from {user['data'].decode()}: {message['data'].decode()}")
-            for client in clients:
-                client.send(user['header']+user['data']+message['header']+message['data'])
+            print(f'Received message from {user["data"].decode("utf-8")}: {message["data"].decode("utf-8")}')
+
+            for client_socket in clients:
+                if client_socket != sock:
+                    client_socket.send(user['header'] + user['data'] + message['header'] + message['data'])
 
     for sock in exception_sockets:
         sockets_list.remove(sock)
