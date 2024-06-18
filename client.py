@@ -30,7 +30,10 @@ if message == "Game full":
 
 
 while True:
-
+    message = ""
+    while message == "":
+        message = client_socket.recv(2048).decode()
+    print(f"Message from server: {message}")
 
     message = input("Choose column: ")
 
@@ -42,6 +45,4 @@ while True:
     message_header = f"{len(message):<{HEADER_LENGTH}}".encode()
     client_socket.send(message_header + message)
 
-    message = client_socket.recv(2048)
-    message = client_socket.recv(2048).decode()
-    print(f"Message from server: {message}")
+    

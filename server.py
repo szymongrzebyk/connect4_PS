@@ -2,6 +2,8 @@ import socket
 import sys
 import select
 
+class GameStart(Exception): pass
+
 HEADER_LENGTH = 10
 
 if len(sys.argv) != 3:
@@ -37,41 +39,60 @@ def recv_msg(client_socket):
 
 
 while True:
-    read_sockets, write_sockets, exception_sockets = select.select(sockets_list, [], sockets_list)
-    
-    for sock in read_sockets:
-        if sock==server_socket:
-            client_socket, client_address = server_socket.accept()
+    try:
+        read_sockets, write_sockets, exception_sockets = select.select(sockets_list, [], sockets_list)
+        
+        for sock in read_sockets:
+            if sock==server_socket:
+                client_socket, client_address = server_socket.accept()
 
-            user = recv_msg(client_socket)
-            if user is False:
-                continue
-            
-            if len(clients) == 2:
-                client_socket.send("Game full".encode())
-                client_socket.close()
-            else:
+                user = recv_msg(client_socket)
+                if user is False:
+                    continue
+                
+                # if len(clients) == 2:
+                #     client_socket.send("Game full".encode())
+                #     client_socket.close()
+                
                 sockets_list.append(client_socket)
 
                 clients[client_socket] = user
 
                 print(f"Connection from {client_address[0]}:{client_address[1]}, user {user['data'].decode()}")
                 client_socket.send("Successfully connected".encode())
-    # DO TEGO PUNKTU DZIAŁA DOBRZE
-        else:
-            message = recv_msg(sock)
-            
-            if message is False:
-                print(f"Closed connection from {clients[sock]['data'].decode()}")
-                sockets_list.remove(sock)
-                del clients[sock]
-                continue
-            
-            user = clients[sock]
-            print(f"Received message from {user['data'].decode()}: {message['data'].decode()}")
-            for client in clients:
-                client.send(user['header']+user['data']+message['header']+message['data'])
+                if len(clients) == 2:
+                    raise GameStart
+    except GameStart:
+        break
+                
 
-    for sock in exception_sockets:
-        sockets_list.remove(sock)
-        del clients[sock]
+    # DO TEGO PUNKTU DZIAŁA DOBRZE
+
+ 
+starting_socket = sockets_list[1]
+starting_socket.send("You start".encode())
+
+
+turn = 0
+while True: # game loop
+    current_socket = sockets_list[(turn%2)+1]
+    turn+=1
+
+    message = current_socket.recv(2048)
+    message = message.decode()
+    # if message is False:
+    #     print(f"Closed connection from {clients[current_socket]['data'].decode()}")
+    #     sockets_list.remove(current_socket)
+    #     del clients[current_socket]
+    #     continue
+    
+    user = clients[current_socket]
+    print(f"Received message from {user['data'].decode()}: {message}")
+    for client in clients:
+        if client != current_socket:
+            client.send("Your turn".encode())
+
+    
+    # for sock in exception_sockets: # maybe to add somewhere later
+    #     sockets_list.remove(sock)
+    #     del clients[sock]
