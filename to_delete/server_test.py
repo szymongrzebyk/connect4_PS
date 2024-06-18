@@ -45,18 +45,13 @@ while True:
             user = recv_msg(client_socket)
             if user is False:
                 continue
-            
-            if len(sockets_list) == 3:
-                client_socket.send("Game full".encode())
-                client_socket.close()
-            else:
-                sockets_list.append(client_socket)
 
-                clients[client_socket] = user
+            sockets_list.append(client_socket)
 
-                print(f"Connection from {client_address[0]}:{client_address[1]}, user {user['data'].decode()}")
-                client_socket.send("Successfully connected".encode())
-    # DO TEGO PUNKTU DZIAŁA DOBRZE
+            clients[client_socket] = user
+
+            print(f"Connection from {client_address[0]}:{client_address[1]}, user {user['data'].decode()}")
+
         else:
             message = recv_msg(sock)
             

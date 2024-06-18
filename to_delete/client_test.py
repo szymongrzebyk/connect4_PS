@@ -20,12 +20,6 @@ username = name.encode()
 username_header = f"{len(username):<{HEADER_LENGTH}}".encode()
 client_socket.send(username_header + username)
 
-message = client_socket.recv(2048).decode() # initial game message
-print(message)
-if message == "Game full":
-    exit()
-
-
 while True:
     message = input("Choose column: ")
 
