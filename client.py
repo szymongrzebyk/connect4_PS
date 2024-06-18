@@ -2,31 +2,59 @@ import socket
 import select
 import errno
 import sys
-import pickle
+import struct
+
+# game imports
+from board import *
+from control import *
+from player import *
+
+class GameEnd(Exception): pass
 
 HEADER_LENGTH = 10
+MCAST_GRP = '224.1.1.1'
+MCAST_PORT = 5007
 
 if len(sys.argv) != 4:
     print("Argument format: server.py <IP address> <port>")
     exit()
 
+while True:
+    try:
+        mode = int(input("1. Play game\n2. Watch game\n"))
+        if mode!=1 and mode!=2:
+            raise ValueError
+        break
+    except KeyboardInterrupt:
+        sys.exit()
+    except:
+        print("Choose correct option")
+
 IPaddr = str(sys.argv[1])
 port = int(sys.argv[2])
 name = str(sys.argv[3])
 
-client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-client_socket.connect((IPaddr, port))
-# client_socket.setblocking(False)
+if mode==1:
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    client_socket.connect((IPaddr, port))
 
-username = name.encode('utf-8')
-username_header = f"{len(username):<{HEADER_LENGTH}}".encode('utf-8')
+    username = name.encode('utf-8')
+    username_header = f"{len(username):<{HEADER_LENGTH}}".encode('utf-8')
 
-client_socket.send(username_header + username)
+    client_socket.send(username_header + username)
 
-message = client_socket.recv(2048).decode() # initial game message
-print(message)
-if message == "Game full":
-    sys.exit()
+    message = client_socket.recv(2048).decode() # initial game message
+    print(message)
+    if message == "Game full":
+        sys.exit()
+
+else:
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+    client_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+    client_socket.bind((MCAST_GRP, MCAST_PORT))
+    mreq = struct.pack("4sl", socket.inet_aton(MCAST_GRP), socket.INADDR_ANY)
+    client_socket.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
 
 def flush_input():
     try:
@@ -37,23 +65,84 @@ def flush_input():
         import sys, termios    #for linux/unix
         termios.tcflush(sys.stdin, termios.TCIOFLUSH)
 
-while True:
-    message = ""
-    while message == "":
-        message = client_socket.recv(2048).decode()
-    print(f"Message from server: {message}")
+# game preparation
+clear_console()
+board_width = 7
+board_height = 6
+board = GameBoard(board_width, board_height)
+player1 = Player('O')
+player2 = Player('X')
+board.print()
+
+
+
+# game loop
+try:
+    if mode==1:
+        while True:
+            message = ""
+            while message == "":
+                message = client_socket.recv(2048).decode()
+            print(f"Message from server: {message}")
+            if message=="Client disconnected":
+                raise GameEnd
+            if message!="You start":
+                try:
+                    player2.make_move(board, int(message))
+                except GameWon:
+                    print("You lost!")
+                    raise GameEnd
+            flush_input()
+            while True:
+                message = input("Choose column: ")
+
+                try:
+                    player1.make_move(board, int(message))
+                    break
+                except GameWon:
+                    print("You won!")
+                    client_socket.send(message.encode())
+                    raise GameEnd
+                except ValueError:
+                        board.print()
+                        print("There is no space.")
+                except IndexError:
+                    board.print()
+                    print("No such a column, choose different number.")
+            # get input -> validate input -> send input to server
+            # -> wait for server response -> print response
+            
+            # TU DODAĆ WHILE - VALIDATE INPUT
+            message = message.encode()
+            client_socket.send(message)
     
-
-    flush_input()
-    message = input("Choose column: ")
-
-
-    # get input -> validate input -> send input to server
-    # -> wait for server response -> print response
-    
-    # TU DODAĆ WHILE - VALIDATE INPUT
-    message = message.encode()
-    message_header = f"{len(message):<{HEADER_LENGTH}}".encode()
-    client_socket.send(message_header + message)
-
+    else:
+        while True:
+            message = ""
+            while message == "":
+                message = client_socket.recv(2048).decode()
+            print(f"Message from server: {message}")
+            if message=="Client disconnected":
+                raise GameEnd
+            if message!="You start":
+                try:
+                    player1.make_move(board, int(message))
+                except GameWon:
+                    print("Player 1 won!")
+                    raise GameEnd
+            message = ""
+            while message == "":
+                message = client_socket.recv(2048).decode()
+            print(f"Message from server: {message}")
+            if message=="Client disconnected":
+                raise GameEnd
+            if message!="You start":
+                try:
+                    player2.make_move(board, int(message))
+                except GameWon:
+                    print("Player 2 won!")
+                    raise GameEnd
+            
+except GameEnd:
+    sys.exit()
     

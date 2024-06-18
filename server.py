@@ -1,6 +1,7 @@
 import socket
 import sys
 import select
+import errno
 
 class GameStart(Exception): pass
 
@@ -62,6 +63,10 @@ while True:
                 client_socket.send("Successfully connected".encode())
                 if len(clients) == 2:
                     raise GameStart
+        
+        # for sock in exception_sockets:
+        #     sockets_list.remove(sock)
+        #     del clients[sock]
     except GameStart:
         break
                 
@@ -86,20 +91,22 @@ while True: # game loop
     turn+=1
 
     message = current_socket.recv(2048)
-    message = message.decode()
-    # if message is False:
-    #     print(f"Closed connection from {clients[current_socket]['data'].decode()}")
-    #     sockets_list.remove(current_socket)
-    #     del clients[current_socket]
-    #     continue
+    
+    if not message:
+        print(f"Closed connection from {clients[current_socket]['data'].decode()}")
+        sockets_list.remove(current_socket)
+        del clients[current_socket]
+        for client in clients:
+            if client != current_socket:
+                client.send("Client disconnected".encode())
+        multicast_socket.sendto("Client disconnected".encode(), (MCAST_GROUP, MCAST_PORT))
+        break
+    
+    message_decoded = message.decode()
     
     user = clients[current_socket]
-    print(f"Received message from {user['data'].decode()}: {message}")
+    print(f"Received message from {user['data'].decode()}: {message_decoded}")
     for client in clients:
         if client != current_socket:
-            client.send("Your turn".encode())
-
-    
-    # for sock in exception_sockets: # maybe to add somewhere later
-    #     sockets_list.remove(sock)
-    #     del clients[sock]
+            client.send(message)
+    multicast_socket.sendto(message, (MCAST_GROUP, MCAST_PORT))
