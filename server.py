@@ -117,6 +117,9 @@ while not client1_logged and not client2_logged:  # logging in loop
 starting_socket = sockets_list[1]
 starting_socket.send("You start".encode())
 
+log_file = open("games.log", "a+")
+for line in log_file:
+    pass
 
 turn = 0
 while True: # game loop
