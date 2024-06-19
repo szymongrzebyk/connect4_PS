@@ -20,7 +20,7 @@ HEADER_LENGTH = 10
 MCAST_GRP = '224.1.1.1'
 MCAST_PORT = 5007
 
-if len(sys.argv) != 4:
+if len(sys.argv) != 3:
     print("Argument format: server.py <IP address> <port>")
     exit()
 
@@ -37,12 +37,13 @@ while True:
 
 IPaddr = str(sys.argv[1])
 port = int(sys.argv[2])
-name = str(sys.argv[3])
+
 
 if mode == 1:
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client_socket.connect((IPaddr, port))
 
+    name = socket.gethostname()
     username = name.encode('utf-8')
     username_header = f"{len(username):<{HEADER_LENGTH}}".encode('utf-8')
 
@@ -148,10 +149,7 @@ try:
                 except IndexError:
                     board.print()
                     print("No such a column, choose different number.")
-            # get input -> validate input -> send input to server
-            # -> wait for server response -> print response
             
-            # TU DODAĆ WHILE - VALIDATE INPUT
             message = message.encode()
             client_socket.send(message)
     

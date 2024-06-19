@@ -62,10 +62,6 @@ while True:
                 if user is False:
                     continue
                 
-                # if len(clients) == 2:
-                #     client_socket.send("Game full".encode())
-                #     client_socket.close()
-                
                 sockets_list.append(client_socket)
 
                 clients[client_socket] = user
@@ -75,10 +71,7 @@ while True:
 
                 if len(clients) == 2:
                     raise GameStart
-        
-        # for sock in exception_sockets:
-        #     sockets_list.remove(sock)
-        #     del clients[sock]
+
     except GameStart:
         time.sleep(1)
         sockets_list[1].send('Log'.encode())
@@ -112,7 +105,6 @@ while not client1_logged or not client2_logged:  # logging in loop
         print(creds_as_string)
         user_login = received_creds[0].data
         user_hash = received_creds[1].data
-        # received_creds_list = received_creds.split(':')  # expected format {login}:{hash}
         creds_file = open('creds.txt', 'r')
         user_exists = False
         for line in creds_file:
@@ -140,8 +132,7 @@ while not client1_logged or not client2_logged:  # logging in loop
 creds_file.close()
 
 
-# print("\n",clients,"\n")
-print("start")
+print("Game is starting")
 starting_socket = sockets_list[1]
 starting_socket.send("You start".encode())
 
@@ -160,7 +151,8 @@ else:
 # log format: {id}:{current_player}:{opposite_player}:{move}
 
 turn = 0
-while True: # game loop
+# game loop
+while True:
     current_socket = sockets_list[(turn%2)+1]
     
 
