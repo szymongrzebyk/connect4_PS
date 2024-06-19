@@ -86,29 +86,31 @@ client1_logged = False
 client2_logged = False
 
 while not client1_logged and not client2_logged:  # logging in loop
-    #  receiving credentials from clients
-    received_creds = ""
-    received_creds_list = received_creds.split(':')  # expected format {login}:{hash}
-    creds_file = open('creds.txt', 'r')
-    user_exists = False
-    for line in creds_file:
-        single_user = line.split(':')
-        if single_user[0] == received_creds_list[0]:
-            user_exists = True
-            if single_user[1] == received_creds_list[1]:
-                if client1_logged:
-                    client2_logged = True
-                    # sending OK message
+    for current_socket in sockets_list:
+        received_creds = current_socket.recv(2048).decode()
+        if not received_creds:
+            continue
+        received_creds_list = received_creds.split(':')  # expected format {login}:{hash}
+        creds_file = open('creds.txt', 'r')
+        user_exists = False
+        for line in creds_file:
+            single_user = line.split(':')
+            if single_user[0] == received_creds_list[0]:
+                user_exists = True
+                if single_user[1] == received_creds_list[1]:
+                    if client1_logged:
+                        client2_logged = True
+                    else:
+                        client1_logged = True
+                    current_socket.send('OK'.encode())
                 else:
-                    client1_logged = True
-                    # sending OK message
-            else:
-                print("Wrong pass")
-                # sending WRONG PASS message
-    creds_file.close()
-    if not user_exists:
-        creds_file = open('creds.txt', 'a')
-        creds_file.write(received_creds)
+                    print("Wrong pass")
+                    current_socket.send('WRONG PASS'.encode())
+        creds_file.close()
+        if not user_exists:
+            creds_file = open('creds.txt', 'a')
+            creds_file.write(received_creds)
+            current_socket.send('OK'.encode())
 
 
 

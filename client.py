@@ -51,11 +51,22 @@ if mode == 1:
     print(message)
     if message == "Game full":
         sys.exit()
-    login = input("Enter your login: ")
-    password = getpass("Enter your password")
-    pass_hash = sha256(password.encode('utf-8')).hexdigest()
-    credentials = login + ":" + pass_hash
-
+    while True:
+        login = input("Enter your login: ")
+        password = getpass("Enter your password:")
+        pass_hash = sha256(password.encode('utf-8')).hexdigest()
+        credentials = login + ":" + pass_hash
+        client_socket.send(credentials.encode())
+        reply = ""
+        while reply == "":
+            reply = client_socket.recv(2048).decode()
+        if reply == "WRONG PASS":
+            print("Password incorrect.")
+        elif reply == 'OK':
+            break
+        else:
+            print("Logging error")
+            sys.exit()
 
 else:
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
