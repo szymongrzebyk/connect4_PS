@@ -53,6 +53,10 @@ if mode == 1:
     if message == "Game full":
         sys.exit()
     while True:
+        message = client_socket.recv(2048).decode()
+        if message == 'Log':
+            break
+    while True:
         while True:
             try:
                 login = input("Enter your login: ")

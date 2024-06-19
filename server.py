@@ -5,6 +5,7 @@ import tlv8
 from control import *
 import errno
 import random
+import time
 
 
 class GameStart(Exception): pass
@@ -16,13 +17,13 @@ if len(sys.argv) != 3:
     print("Argument format: server.py <IP address> <port>")
     exit()
 
-IPaddr = str(sys.argv[1])
+addr = str(sys.argv[1])
 port = int(sys.argv[2])
 
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
-server_socket.bind((IPaddr, port))
+server_socket.bind(socket.getaddrinfo(addr,port)[0][-1])
 server_socket.listen(2)
 
 sockets_list = [server_socket]
@@ -74,6 +75,9 @@ while True:
         #     sockets_list.remove(sock)
         #     del clients[sock]
     except GameStart:
+        time.sleep(1)
+        sockets_list[1].send('Log'.encode())
+        sockets_list[2].send('Log'.encode())
         break
                 
 
