@@ -23,7 +23,12 @@ port = int(sys.argv[2])
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
-server_socket.bind(socket.getaddrinfo(addr,port)[0][-1])
+dns_list = socket.getaddrinfo(addr,port)
+for s in dns_list:
+    if s[0] is socket.AddressFamily.AF_INET and s[1] is socket.SocketKind.SOCK_STREAM:
+        sockaddr = s[4]
+
+server_socket.bind(sockaddr)
 server_socket.listen(2)
 
 sockets_list = [server_socket]
