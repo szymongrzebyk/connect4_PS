@@ -1,6 +1,7 @@
 import socket
 import sys
 import select
+import tlv8
 from control import *
 import errno
 import random
@@ -90,24 +91,33 @@ client_usernames = []
 while not client1_logged or not client2_logged:  # logging in loop
     for socket in range(1, len(sockets_list)):
         current_socket = sockets_list[socket]
-        received_creds = current_socket.recv(2048).decode()
-        if not received_creds:
+        creds_struct = current_socket.recv(2048).decode()
+        if not creds_struct:
             continue
-        received_creds_list = received_creds.split(':')  # expected format {login}:{hash}
+        expected_struct = {
+            1: tlv8.DataType.STRING,
+            2: tlv8.DataType.STRING
+        }
+        received_creds = tlv8.decode(creds_struct, expected_struct)
+        creds_as_string = tlv8.format_string(received_creds)
+        print(creds_as_string)
+        user_login = received_creds[0].data
+        user_hash = received_creds[1].data
+        # received_creds_list = received_creds.split(':')  # expected format {login}:{hash}
         creds_file = open('creds.txt', 'r')
         user_exists = False
         for line in creds_file:
             single_user = line.strip().split(':')
-            if single_user[0] == received_creds_list[0]:
+            if single_user[0] == user_login:
                 user_exists = True
-                if single_user[1] == received_creds_list[1]:
+                if single_user[1] == user_hash:
                     if client1_logged:
                         client2_logged = True
-                        client_usernames.append(received_creds_list[0])
+                        client_usernames.append(user_login)
                         print("client 2 logged")
                     else:
                         client1_logged = True
-                        client_usernames.append(received_creds_list[0])
+                        client_usernames.append(user_login)
                         print("client 1 logged")
                     current_socket.send('OK'.encode())
                 else:
@@ -116,7 +126,7 @@ while not client1_logged or not client2_logged:  # logging in loop
         creds_file.close()
         if not user_exists:
             creds_file = open('creds.txt', 'a')
-            creds_file.write("\n"+received_creds)
+            creds_file.write("\n" + user_login + ':' + user_hash)
             current_socket.send('OK'.encode())
 creds_file.close()
 

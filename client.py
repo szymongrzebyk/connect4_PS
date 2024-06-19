@@ -5,6 +5,7 @@ import sys
 import struct
 from hashlib import sha256
 from getpass import getpass
+import tlv8
 
 # game imports
 from board import *
@@ -56,7 +57,12 @@ if mode == 1:
         password = getpass("Enter your password:")
         pass_hash = sha256(password.encode('utf-8')).hexdigest()
         credentials = login + ":" + pass_hash
-        client_socket.send(credentials.encode())
+        TLV_struct = {
+            tlv8.Entry(1, login),
+            tlv8.Entry(2, pass_hash)
+        }
+        creds_data = tlv8.encode(TLV_struct)
+        client_socket.send(creds_data.encode())
         reply = ""
         while reply == "":
             reply = client_socket.recv(2048).decode()
