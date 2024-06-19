@@ -86,7 +86,8 @@ client1_logged = False
 client2_logged = False
 
 while not client1_logged and not client2_logged:  # logging in loop
-    for current_socket in sockets_list:
+    for socket in range(len(sockets_list)):
+        current_socket = sockets_list[socket]
         received_creds = current_socket.recv(2048).decode()
         if not received_creds:
             continue
