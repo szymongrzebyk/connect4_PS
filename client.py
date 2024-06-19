@@ -56,13 +56,12 @@ if mode == 1:
         login = input("Enter your login: ")
         password = getpass("Enter your password:")
         pass_hash = sha256(password.encode('utf-8')).hexdigest()
-        credentials = login + ":" + pass_hash
-        TLV_struct = {
+        TLV_struct = [
             tlv8.Entry(1, login),
             tlv8.Entry(2, pass_hash)
-        }
+        ]
         creds_data = tlv8.encode(TLV_struct)
-        client_socket.send(creds_data.encode())
+        client_socket.send(creds_data)
         reply = ""
         while reply == "":
             reply = client_socket.recv(2048).decode()

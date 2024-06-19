@@ -91,7 +91,7 @@ client_usernames = []
 while not client1_logged or not client2_logged:  # logging in loop
     for socket in range(1, len(sockets_list)):
         current_socket = sockets_list[socket]
-        creds_struct = current_socket.recv(2048).decode()
+        creds_struct = current_socket.recv(2048)
         if not creds_struct:
             continue
         expected_struct = {
