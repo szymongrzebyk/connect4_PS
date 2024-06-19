@@ -53,7 +53,16 @@ if mode == 1:
     if message == "Game full":
         sys.exit()
     while True:
-        login = input("Enter your login: ")
+        while True:
+            try:
+                login = input("Enter your login: ")
+                for char in login:
+                    if char == ':':
+                        raise ValueError
+                break
+            except ValueError:
+                print("\' : \' character is forbidden!")
+                continue
         password = getpass("Enter your password:")
         pass_hash = sha256(password.encode('utf-8')).hexdigest()
         TLV_struct = [
