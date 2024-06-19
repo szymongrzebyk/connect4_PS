@@ -1,9 +1,12 @@
 import socket
 import sys
 import select
+from control import *
 import errno
 
+
 class GameStart(Exception): pass
+
 
 HEADER_LENGTH = 10
 
@@ -44,7 +47,7 @@ while True:
         read_sockets, write_sockets, exception_sockets = select.select(sockets_list, [], sockets_list)
         
         for sock in read_sockets:
-            if sock==server_socket:
+            if sock == server_socket:
                 client_socket, client_address = server_socket.accept()
 
                 user = recv_msg(client_socket)
@@ -61,6 +64,7 @@ while True:
 
                 print(f"Connection from {client_address[0]}:{client_address[1]}, user {user['data'].decode()}")
                 client_socket.send("Successfully connected".encode())
+
                 if len(clients) == 2:
                     raise GameStart
         
@@ -78,8 +82,37 @@ MCAST_TTL = 2
 multicast_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
 multicast_socket.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, MCAST_TTL)
 
+client1_logged = False
+client2_logged = False
 
-print("\n",clients,"\n")
+while not client1_logged and not client2_logged:  # logging in loop
+    #  receiving credentials from clients
+    received_creds = ""
+    received_creds_list = received_creds.split(':')  # expected format {login}:{hash}
+    creds_file = open('creds.txt', 'r')
+    user_exists = False
+    for line in creds_file:
+        single_user = line.split(':')
+        if single_user[0] == received_creds_list[0]:
+            user_exists = True
+            if single_user[1] == received_creds_list[1]:
+                if client1_logged:
+                    client2_logged = True
+                    # sending OK message
+                else:
+                    client1_logged = True
+                    # sending OK message
+            else:
+                print("Wrong pass")
+                # sending WRONG PASS message
+    creds_file.close()
+    if not user_exists:
+        creds_file = open('creds.txt', 'a')
+        creds_file.write(received_creds)
+
+
+
+# print("\n",clients,"\n")
 
 starting_socket = sockets_list[1]
 starting_socket.send("You start".encode())

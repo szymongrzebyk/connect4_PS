@@ -8,3 +8,7 @@ def clear_console():
 
 class GameWon(Exception):
     pass
+
+
+class WrongPass(Exception):
+    pass

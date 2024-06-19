@@ -3,13 +3,17 @@ import select
 import errno
 import sys
 import struct
+from hashlib import sha256
+from getpass import getpass
 
 # game imports
 from board import *
 from control import *
 from player import *
 
+
 class GameEnd(Exception): pass
+
 
 HEADER_LENGTH = 10
 MCAST_GRP = '224.1.1.1'
@@ -22,7 +26,7 @@ if len(sys.argv) != 4:
 while True:
     try:
         mode = int(input("1. Play game\n2. Watch game\n"))
-        if mode!=1 and mode!=2:
+        if mode != 1 and mode != 2:
             raise ValueError
         break
     except KeyboardInterrupt:
@@ -34,7 +38,7 @@ IPaddr = str(sys.argv[1])
 port = int(sys.argv[2])
 name = str(sys.argv[3])
 
-if mode==1:
+if mode == 1:
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client_socket.connect((IPaddr, port))
 
@@ -47,6 +51,11 @@ if mode==1:
     print(message)
     if message == "Game full":
         sys.exit()
+    login = input("Enter your login: ")
+    password = getpass("Enter your password")
+    pass_hash = sha256(password.encode('utf-8')).hexdigest()
+    credentials = login + ":" + pass_hash
+
 
 else:
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
@@ -55,6 +64,7 @@ else:
     client_socket.bind((MCAST_GRP, MCAST_PORT))
     mreq = struct.pack("4sl", socket.inet_aton(MCAST_GRP), socket.INADDR_ANY)
     client_socket.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
+
 
 def flush_input():
     try:
@@ -65,6 +75,7 @@ def flush_input():
         import sys, termios    #for linux/unix
         termios.tcflush(sys.stdin, termios.TCIOFLUSH)
 
+
 # game preparation
 clear_console()
 board_width = 7
@@ -73,7 +84,6 @@ board = GameBoard(board_width, board_height)
 player1 = Player('O')
 player2 = Player('X')
 board.print()
-
 
 
 # game loop
