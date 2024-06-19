@@ -122,6 +122,8 @@ starting_socket.send("You start".encode())
 log_file = open("games.log", "a+")
 for line in log_file:
     pass
+last_line = line
+log_file.close()
 
 turn = 0
 while True: # game loop
