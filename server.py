@@ -3,6 +3,7 @@ import sys
 import select
 from control import *
 import errno
+import random
 
 
 class GameStart(Exception): pass
@@ -84,6 +85,7 @@ multicast_socket.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, MCAST_TT
 
 client1_logged = False
 client2_logged = False
+client_usernames = []
 
 while not client1_logged or not client2_logged:  # logging in loop
     for socket in range(1, len(sockets_list)):
@@ -101,9 +103,11 @@ while not client1_logged or not client2_logged:  # logging in loop
                 if single_user[1] == received_creds_list[1]:
                     if client1_logged:
                         client2_logged = True
+                        client_usernames.append(received_creds_list[0])
                         print("client 2 logged")
                     else:
                         client1_logged = True
+                        client_usernames.append(received_creds_list[0])
                         print("client 1 logged")
                     current_socket.send('OK'.encode())
                 else:
@@ -114,7 +118,7 @@ while not client1_logged or not client2_logged:  # logging in loop
             creds_file = open('creds.txt', 'a')
             creds_file.write("\n"+received_creds)
             current_socket.send('OK'.encode())
-
+creds_file.close()
 
 
 # print("\n",clients,"\n")
@@ -122,16 +126,24 @@ print("start")
 starting_socket = sockets_list[1]
 starting_socket.send("You start".encode())
 
-log_file = open("games.log", "a+")
+line = ""
+log_file = open("games.log", "r+")
 for line in log_file:
     pass
 last_line = line
-log_file.close()
+print(last_line)
+if last_line == "":
+    game_id = 0
+else:
+    last_game = last_line.strip().split(':')
+    game_id = int(last_game[0]) + random.randint(1,20)
+
+# log format: {id}:{current_player}:{opposite_player}:{move}
 
 turn = 0
 while True: # game loop
     current_socket = sockets_list[(turn%2)+1]
-    turn+=1
+    
 
     message = current_socket.recv(2048)
     
@@ -153,3 +165,7 @@ while True: # game loop
         if client != current_socket:
             client.send(message)
     multicast_socket.sendto(message, (MCAST_GROUP, MCAST_PORT))
+    log_file.write(str(game_id)+':'+client_usernames[turn%2]+':'+client_usernames[(turn+1)%2]+':'+str(message_decoded)+"\n")
+    turn+=1
+
+log_file.close()
