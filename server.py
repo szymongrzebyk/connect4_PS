@@ -129,6 +129,15 @@ while not client1_logged or not client2_logged:  # logging in loop
             creds_file = open('creds.txt', 'a')
             creds_file.write("\n" + user_login + ':' + user_hash)
             current_socket.send('OK'.encode())
+            if client1_logged:
+                client2_logged = True
+                client_usernames.append(user_login)
+                print("client 2 logged")
+            else:
+                client1_logged = True
+                client_usernames.append(user_login)
+                print("client 1 logged")
+            creds_file.close()
 creds_file.close()
 
 

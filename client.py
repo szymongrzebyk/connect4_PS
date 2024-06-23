@@ -72,7 +72,7 @@ if mode == 1:
         pass_hash = sha256(password.encode('utf-8')).hexdigest()
         TLV_struct = [
             tlv8.Entry(1, login),
-            tlv8.Entry(2, pass_hash)
+            tlv8.Entry(2, pas2s_hash)
         ]
         creds_data = tlv8.encode(TLV_struct)
         client_socket.send(creds_data)
